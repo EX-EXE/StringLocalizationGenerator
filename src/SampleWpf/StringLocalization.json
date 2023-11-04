@@ -1,0 +1,14 @@
+{
+  "ID_TEST": {
+    "default": "test",
+    "jp": "テスト"
+  },
+  "ID_YES": {
+    "en": "yes",
+    "jp": "はい",
+  },
+  "ID_NO": {
+    "EN": "no",
+    "JP": "いいえ"
+  },
+}

@@ -1,0 +1,24 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SampleAvalonia"
+        xmlns:loc="clr-namespace:StringLocalizationGenerator"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="SampleAvalonia.MainWindow"
+        Title="SampleAvalonia"
+		x:DataType="local:MainViewModel"
+		Height="100" Width="400">
+
+	<Window.DataContext>
+		<local:MainViewModel></local:MainViewModel>
+	</Window.DataContext>
+	
+	<StackPanel Orientation="Vertical">
+		<TextBlock Text="{loc:Binding Key=ID_TEST}"></TextBlock>
+		<TextBlock Text="{loc:Binding KeyBinding={Binding DynamicKey}}"></TextBlock>
+		<ComboBox ItemsSource="{Binding Languages}" SelectedItem="{Binding SelectedLanguage}">
+		</ComboBox>
+
+	</StackPanel>
+</Window>

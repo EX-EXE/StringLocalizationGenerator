@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net6.0-windows</TargetFramework>
+		<Nullable>enable</Nullable>
+		<LangVersion>11</LangVersion>
+		<UseWPF>true</UseWPF>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<AdditionalFiles Include="StringLocalization.json" />
+	</ItemGroup>
+	<ItemGroup>
+		<CompilerVisibleProperty Include="StringLocalizationGenerator_OutputWpfMarkupExtension" />
+	</ItemGroup>
+	<PropertyGroup>
+		<StringLocalizationGenerator_OutputWpfMarkupExtension>Enable</StringLocalizationGenerator_OutputWpfMarkupExtension>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\StringLocalizationGenerator\StringLocalizationGenerator.csproj">
+			<OutputItemType>Analyzer</OutputItemType>
+			<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+		</ProjectReference>
+	</ItemGroup>
+</Project>
