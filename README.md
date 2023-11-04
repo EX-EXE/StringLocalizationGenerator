@@ -37,11 +37,9 @@ PM> Install-Package [StringLocalizationGenerator](https://www.nuget.org/packages
 
 ## Add <AdditionalFiles> to .csproj
 ```xml
-<Project Sdk="Microsoft.NET.Sdk">
-  <ItemGroup>
-    <AdditionalFiles Include="StringLocalization.json" />
-  </ItemGroup>
-</Project>
+<ItemGroup>
+  <AdditionalFiles Include="StringLocalization.json" />
+</ItemGroup>
 ```
 
 ## (WPF Only) Add OutputWpfMarkupExtension to .csproj
