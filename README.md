@@ -9,10 +9,9 @@ Generate C# source for localization from json file.
 
 # How To Use
 ## Install by nuget
-PM> Install-Package 
+PM> Install-Package [StringLocalizationGenerator](https://www.nuget.org/packages/StringLocalizationGenerator)
 
-## Create Language Json File
-
+## Create Languages Json File
 ```json
 # Configuration
 {
@@ -39,9 +38,9 @@ PM> Install-Package
 ## Add <AdditionalFiles> to .csproj
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
-	<ItemGroup>
-		<AdditionalFiles Include="StringLocalization.json" />
-	</ItemGroup>
+  <ItemGroup>
+    <AdditionalFiles Include="StringLocalization.json" />
+  </ItemGroup>
 </Project>
 ```
 
