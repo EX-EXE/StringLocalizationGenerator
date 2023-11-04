@@ -19,8 +19,13 @@ public partial class MainViewModel : ObservableObject
 
     public ObservableCollection<string> Languages { get; set; } = new ObservableCollection<string>();
 
+    public ObservableCollection<string> KeyNames { get; set; } = new ObservableCollection<string>();
+
     [ObservableProperty]
-    private StringLocalizationGenerator.StringLocalizationKeyType dynamicKey = StringLocalizationGenerator.StringLocalizationKeyType.ID_NO;
+    private string selectedKeyName = string.Empty;
+
+    [ObservableProperty]
+    private StringLocalizationGenerator.StringLocalizationKeyType selectedKeyType = StringLocalizationGenerator.StringLocalizationKeyType.ID_NO;
 
     [ObservableProperty]
     private string selectedLanguage = "default";
@@ -31,18 +36,27 @@ public partial class MainViewModel : ObservableObject
         {
             Languages.Add(key);
         }
+        foreach (var key in StringLocalizationManager.KeyNames)
+        {
+            KeyNames.Add(key);
+        }
 
         var first = LangDict.First();
-        SelectedLanguage = first.Key;
+        SelectedLanguage = LangDict.First().Key;
         StringLocalizationManager.ChangeLanguage(first.Value);
+        SelectedKeyName = KeyNames.First();
     }
 
-    partial void OnSelectedLanguageChanged(string lang)
+    partial void OnSelectedLanguageChanged(string value)
     {
-        if (LangDict.TryGetValue(lang, out var key))
+        if (LangDict.TryGetValue(value, out var key))
         {
             StringLocalizationManager.ChangeLanguage(key);
         }
+    }
+    partial void OnSelectedKeyNameChanged(string value)
+    {
+        SelectedKeyType = StringLocalizationManager.GetKeyType(value);
     }
 
 }

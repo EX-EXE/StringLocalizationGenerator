@@ -6,19 +6,59 @@
         xmlns:local="clr-namespace:SampleWpf"
         xmlns:loc="clr-namespace:StringLocalizationGenerator"
         mc:Ignorable="d"
-        Title="MainWindow" Height="100" Width="400">
+        Title="MainWindow" Height="150" Width="300">
 
     <Window.DataContext>
         <local:MainViewModel></local:MainViewModel>
     </Window.DataContext>
-    
-    <StackPanel Orientation="Vertical">
 
-        <TextBlock Text="{loc:Binding Key=ID_TEST}"></TextBlock>
-        <TextBlock Text="{loc:Binding KeyBinding={Binding DynamicKey}}"></TextBlock>
-        <ComboBox ItemsSource="{Binding Languages}" SelectedItem="{Binding SelectedLanguage}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"></RowDefinition>
+            <RowDefinition Height="25"></RowDefinition>
+        </Grid.RowDefinitions>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"></ColumnDefinition>
+            <ColumnDefinition Width="*"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+
+        <GroupBox Grid.Row="0" Grid.Column="0" Header="Key" >
+            <StackPanel Orientation="Vertical">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="ID_TEST : "></TextBlock>
+                    <TextBlock Text="{loc:Binding Key=ID_TEST}"></TextBlock>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="ID_YES : "></TextBlock>
+                    <TextBlock Text="{loc:Binding Key=ID_YES}"></TextBlock>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="ID_NO : " ></TextBlock>
+                    <TextBlock Text="{loc:Binding Key=ID_NO}"></TextBlock>
+                </StackPanel>
+            </StackPanel>
+        </GroupBox>
+
+        <GroupBox Header="KeyBinding" Grid.Row="0" Grid.Column="1">
+            <StackPanel Orientation="Vertical">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{Binding SelectedKeyName}" ></TextBlock>
+                    <TextBlock Text=" : " ></TextBlock>
+                    <TextBlock Text="{loc:Binding KeyBinding={Binding SelectedKeyType}}"></TextBlock>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Keys : " ></TextBlock>
+                    <ComboBox Grid.Row="1" Grid.ColumnSpan="2" ItemsSource="{Binding KeyNames}" SelectedItem="{Binding SelectedKeyName}" />
+                </StackPanel>
+            </StackPanel>
+        </GroupBox>
+
+        <StackPanel Grid.Row="1" Grid.ColumnSpan="2"  Orientation="Horizontal">
+            <TextBlock Text="Language : " VerticalAlignment="Center"></TextBlock>
+            <ComboBox Grid.Row="1" Grid.ColumnSpan="2" Width="200" ItemsSource="{Binding Languages}" SelectedItem="{Binding SelectedLanguage}">
         </ComboBox>
+        </StackPanel>
+    </Grid>
 
-    </StackPanel>
-        
 </Window>
