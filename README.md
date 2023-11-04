@@ -1,3 +1,5 @@
+[![NuGet version](https://badge.fury.io/nu/StringLocalizationGenerator.svg)](https://badge.fury.io/nu/StringLocalizationGenerator)
+
 # StringLocalizationGenerator
 Generate C# source for localization from json file.
 
