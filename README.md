@@ -53,7 +53,7 @@ PM> Install-Package
 </PropertyGroup>
 ```
 
-## (Avalonia Only) Add OutputAvaloniaMarkupExtension to .csproj And Create StringLocalizationGenerator.BindingExtension.cs File
+## (Avalonia Only) Add OutputAvaloniaMarkupExtension to .csproj And <br/>Create StringLocalizationGenerator.BindingExtension.cs File
 ```xml
 <ItemGroup>
   <CompilerVisibleProperty Include="StringLocalizationGenerator_OutputAvaloniaMarkupExtension" />
