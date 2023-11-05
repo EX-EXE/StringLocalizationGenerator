@@ -20,12 +20,12 @@ PM> Install-Package [StringLocalizationGenerator](https://www.nuget.org/packages
     "[LANGUAGE2]": "[TEXT2]",
     "[LANGUAGE3]": "[TEXT3]",
     "[LANGUAGE...]": "[TEXT...]",
-    "[default(Options)]": "[Text(if Language does not exist)]",
+    "[default(Options)]": "[Text(if Language does not exist)]"
   },
   "[STRING_ID2]": {
     "[LANGUAGE1]": "[TEXT1]",
-    "[LANGUAGE...]": "[TEXT...]",
-  },
+    "[LANGUAGE...]": "[TEXT...]"
+  }
 }
 ```
 ```json
@@ -39,14 +39,10 @@ PM> Install-Package [StringLocalizationGenerator](https://www.nuget.org/packages
     "EN": "no",
     "JP": "いいえ"
   },
-  "ID_NO": {
-    "EN": "no",
-    "JP": "いいえ"
-  },
   "ID_TEST": {
-    "JP": "テスト"
-    "default": "test",
-  },
+    "JP": "テスト",
+    "default": "test"
+  }
 }
 ```
 
