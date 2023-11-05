@@ -1,5 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
+using System;
 using System.Buffers;
 using System.Collections.Immutable;
 using System.Text;
@@ -86,9 +87,12 @@ public partial class StringLocalizationGenerator : IIncrementalGenerator
 
     public class JsonSourceInfo
     {
+        public JsonSourceInfo(Microsoft.CodeAnalysis.Text.SourceText sourceText)
+        {
+            this.SourceText = sourceText;
+        }
         public string FileName { get; set; } = string.Empty;
-        public string Source { get; set; } = string.Empty;
-
+        public Microsoft.CodeAnalysis.Text.SourceText SourceText { get; set; }
         public JsonObject JsonObject { get; set; } = new JsonObject();
     }
 
@@ -100,7 +104,7 @@ public partial class StringLocalizationGenerator : IIncrementalGenerator
         var buildProperty = action.Item2;
 
         GenerateSource(context, sourceTextArray);
-        GenerateSource(context, buildProperty);
+        GenerateMarkupSource(context, buildProperty);
     }
 
 
@@ -125,17 +129,14 @@ public partial class StringLocalizationGenerator : IIncrementalGenerator
             //var fileNameWithout = fileName.Substring(0, fileName.Length - jsonFileName.Length).Trim('.', ' ');
 
             // Json Parse
-            var sourceStr = sourceText.ToString();
-            var sourceSpan = sourceStr.AsSpan();
-            var jsonRoot = JsonParser.Parse(sourceSpan, cancellationToken);
+            var jsonRoot = JsonParser.Parse(sourceText, cancellationToken);
 
             // Json Object Only
             if (jsonRoot is JsonObject jsonObj)
             {
-                jsonSourceList.Add(new JsonSourceInfo()
+                jsonSourceList.Add(new JsonSourceInfo(sourceText)
                 {
                     FileName = fileName,
-                    Source = sourceStr,
                     JsonObject = jsonObj,
                 });
             }
@@ -146,7 +147,6 @@ public partial class StringLocalizationGenerator : IIncrementalGenerator
         foreach (var jsonSource in jsonSourceList)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var sourceSpan = jsonSource.Source.AsSpan();
             foreach (var (key, languages) in jsonSource.JsonObject.Objects)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -155,7 +155,8 @@ public partial class StringLocalizationGenerator : IIncrementalGenerator
                     foreach (var (languageKey, languageValue) in jsonLanguage.Objects)
                     {
                         cancellationToken.ThrowIfCancellationRequested();
-                        var languageName = sourceSpan.Slice(languageKey.Start, languageKey.Length).Trim().ToString().ToLowerInvariant();
+
+                        var languageName = languageKey.ToString(jsonSource.SourceText).Trim().ToLowerInvariant();
                         if (!languageName.Equals(defaultName, StringComparison.OrdinalIgnoreCase))
                         {
                             languageHash.Add(languageName);
@@ -177,18 +178,16 @@ public partial class StringLocalizationGenerator : IIncrementalGenerator
         var keyNameIndex = 1;
         var keyNameList = new List<string>();
         var keyTypeSourceBuilder = new StringBuilder();
-        var fieldsSourceBuilder = new StringBuilder();
         foreach (var jsonSource in jsonSourceList)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var sourceSpan = jsonSource.Source.AsSpan();
             foreach (var (keyObj, languagesObj) in jsonSource.JsonObject.Objects)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var languageIndexData = new SortedList<int, (string, string)>();
 
-                var keyName = sourceSpan.Slice(keyObj.Start, keyObj.Length).Trim().ToString();
                 var defaultData = (string?)null;
+                var keyName = keyObj.ToString(jsonSource.SourceText).Trim();
 
                 if (languagesObj is JsonObject jsonLanguages)
                 {
@@ -197,9 +196,8 @@ public partial class StringLocalizationGenerator : IIncrementalGenerator
                         cancellationToken.ThrowIfCancellationRequested();
                         if (languageValue is JsonString languageString)
                         {
-                            var languageName = sourceSpan.Slice(languageKey.Start, languageKey.Length).Trim().ToString().ToLowerInvariant();
-                            var languageData = sourceSpan.Slice(languageString.Start, languageString.Length).ToString();
-
+                            var languageName = languageKey.ToString(jsonSource.SourceText).Trim().ToLowerInvariant();
+                            var languageData = languageString.ToString(jsonSource.SourceText);
                             if (languageName.Equals(defaultName, StringComparison.OrdinalIgnoreCase))
                             {
                                 defaultData = languageData;
@@ -228,7 +226,7 @@ public partial class StringLocalizationGenerator : IIncrementalGenerator
     {{keyName}} = {{keyNameIndex++}},
 """);
 
-                fieldsSourceBuilder.AppendLine($$"""
+                GenerateFieldSource(context, keyName, $$"""
 {{string.Join("\n", comments.Select(x => $"\t{x}"))}}
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string STRING_{{keyName}}(int languageIndex)
@@ -245,33 +243,29 @@ public partial class StringLocalizationGenerator : IIncrementalGenerator
 {{string.Join("\n", comments.Select(x => $"\t{x}"))}}
     public string {{keyName}}
         => STRING_{{keyName}}(currentLanguageIndex);
-
 """);
             }
         }
 
         // Create Source
-        var outputNamespace = namespaceName;
-        var outputClassName = managerClassName;
-
-        var outputFileName = $"{outputNamespace}.{outputClassName}.cs";
+        var outputFileName = $"{namespaceName}.{managerClassName}.cs";
         context.AddSource(outputFileName, $$$"""
 using System;
 using System.Buffers;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace {{{outputNamespace}}};
+namespace {{{namespaceName}}};
 
 public enum {{{keyTypeEnumName}}} : ulong
 {
 {{{keyTypeSourceBuilder}}}
 }
 
-public partial class {{{outputClassName}}} : INotifyPropertyChanged 
+public partial class {{{managerClassName}}} : INotifyPropertyChanged 
 {
-    private static readonly Lazy<{{{outputClassName}}}> instance = new Lazy<{{{outputClassName}}}>(() => new {{{outputClassName}}}());
-    public static {{{outputClassName}}} Shared => instance.Value;
+    private static readonly Lazy<{{{managerClassName}}}> instance = new Lazy<{{{managerClassName}}}>(() => new {{{managerClassName}}}());
+    public static {{{managerClassName}}} Shared => instance.Value;
 
 
     public static string[] KeyNames = {{{{string.Join(", ", keyNameList.Select(x => $"\"{x}\""))}}}};
@@ -343,15 +337,33 @@ public partial class {{{outputClassName}}} : INotifyPropertyChanged
             _ => throw new System.NotImplementedException($"NotImplemented Type. ({type})")
         };
     }
-
-{{{fieldsSourceBuilder}}}
 }
 """);
 
     }
 
+    private static void GenerateFieldSource(
+        SourceProductionContext context,
+        string key,
+        string field)
+    {
+        var outputFileName = $"{namespaceName}.{managerClassName}.{key}.cs";
+        context.AddSource(outputFileName, $$$"""
+using System;
+using System.Buffers;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
-    private static void GenerateSource(
+namespace {{{namespaceName}}};
+
+partial class {{{managerClassName}}} 
+{
+{{{field}}}
+}
+""");
+    }
+
+    private static void GenerateMarkupSource(
         SourceProductionContext context,
         GeneratorBuildPropertyInfo propertyInfo)
     {
