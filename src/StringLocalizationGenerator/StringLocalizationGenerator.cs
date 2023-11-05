@@ -1,15 +1,8 @@
 ﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
-using System;
 using System.Buffers;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.ComponentModel;
-using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Text;
-using static System.Collections.Specialized.BitVector32;
 
 namespace StringLocalizationGenerator;
 
@@ -237,6 +230,7 @@ public partial class StringLocalizationGenerator : IIncrementalGenerator
 
                 fieldsSourceBuilder.AppendLine($$"""
 {{string.Join("\n", comments.Select(x => $"\t{x}"))}}
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string STRING_{{keyName}}(int languageIndex)
         => languageIndex switch
         {
@@ -265,6 +259,7 @@ public partial class StringLocalizationGenerator : IIncrementalGenerator
 using System;
 using System.Buffers;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace {{{outputNamespace}}};
 
@@ -295,6 +290,7 @@ public partial class {{{outputClassName}}} : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int GetLanguageIndex(ReadOnlySpan<char> lang)
     {
         var buffer = ArrayPool<char>.Shared.Rent(lang.Length);
@@ -317,22 +313,26 @@ public partial class {{{outputClassName}}} : INotifyPropertyChanged
         }
     }
 
-    public static bool ChangeLanguage(ReadOnlySpan<char> lang)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool ChangeLanguage(int languageIndex)
     {
-        var index = GetLanguageIndex(lang);
-        if(index < 0)
+        if(languageIndex < 0 || LanguageNames.Length <= languageIndex)
         {
             return false;
         }
-        if(currentLanguageIndex == index)
+        if(currentLanguageIndex != languageIndex)
         {
-            return true;
+            currentLanguageIndex = languageIndex;
+            Shared.PropertyChanged?.Invoke(Shared, new PropertyChangedEventArgs("CurrentLanguageIndex"));
+{{{string.Join("\n", keyNameList.Select(x => "\t\t\t" + $"""Shared.PropertyChanged?.Invoke(Shared, new PropertyChangedEventArgs("{x}"));"""))}}}
         }
-
-        currentLanguageIndex = index;
-        Shared.PropertyChanged?.Invoke(Shared, new PropertyChangedEventArgs("CurrentLanguageIndex"));
-{{{string.Join("\n", keyNameList.Select(x => "\t\t" + $"""Shared.PropertyChanged?.Invoke(Shared, new PropertyChangedEventArgs("{x}"));"""))}}}
         return true;
+    }
+
+    public static bool ChangeLanguage(ReadOnlySpan<char> lang)
+    {
+        var index = GetLanguageIndex(lang);
+        return ChangeLanguage(index);
     }
 
     public static string GetString({{{keyTypeEnumName}}} type)
