@@ -50,7 +50,7 @@ PM> Install-Package [StringLocalizationGenerator](https://www.nuget.org/packages
 }
 ```
 
-## Add <AdditionalFiles> to .csproj
+## Add \<AdditionalFiles\> to .csproj
 ```xml
 <ItemGroup>
   <AdditionalFiles Include="StringLocalization.json" />
