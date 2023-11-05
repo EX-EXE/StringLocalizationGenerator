@@ -11,7 +11,7 @@
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Description>
-    
+      Generate C# source for localization from json file.
     </Description>
     <PackageTags>wpf;localization;generator;</PackageTags>
   </PropertyGroup>
