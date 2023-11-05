@@ -27,7 +27,7 @@ jobs:
         dotnet-version: 7.0.x
 
     - name: Restore
-      run: dotnet restore
+      run: dotnet restore ./src/StringLocalizationGenerator/
     
     - name: Nuget Pack
       run: dotnet pack ./src/StringLocalizationGenerator/ -c release -p:Version=${{ env.VERSION }} -o /tmp/nuget/
