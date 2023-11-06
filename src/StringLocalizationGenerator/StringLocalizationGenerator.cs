@@ -326,6 +326,11 @@ public partial class {{{managerClassName}}} : INotifyPropertyChanged
     public static bool ChangeLanguage(ReadOnlySpan<char> lang)
     {
         var index = GetLanguageIndex(lang);
+        if(languageIndex < 0)
+        {
+            // Default Index
+            languageIndex = 0;
+        }
         return ChangeLanguage(index);
     }
 
