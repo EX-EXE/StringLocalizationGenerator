@@ -307,6 +307,17 @@ public partial class {{{managerClassName}}} : INotifyPropertyChanged
         }
     }
 
+    public static bool ChangeLanguage(ReadOnlySpan<char> lang)
+    {
+        var index = GetLanguageIndex(lang);
+        if(index < 0)
+        {
+            // Default Index
+            index = 0;
+        }
+        return ChangeLanguage(index);
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool ChangeLanguage(int languageIndex)
     {
@@ -321,17 +332,6 @@ public partial class {{{managerClassName}}} : INotifyPropertyChanged
 {{{string.Join("\n", keyNameList.Select(x => "\t\t\t" + $"""Shared.PropertyChanged?.Invoke(Shared, new PropertyChangedEventArgs("{x}"));"""))}}}
         }
         return true;
-    }
-
-    public static bool ChangeLanguage(ReadOnlySpan<char> lang)
-    {
-        var index = GetLanguageIndex(lang);
-        if(languageIndex < 0)
-        {
-            // Default Index
-            languageIndex = 0;
-        }
-        return ChangeLanguage(index);
     }
 
     public static string GetString({{{keyTypeEnumName}}} type)
