@@ -11,7 +11,7 @@ Generate C# source for localization from json file.
 ## Install by nuget
 PM> Install-Package [StringLocalizationGenerator](https://www.nuget.org/packages/StringLocalizationGenerator)
 
-## Create Languages Json File
+## Create Languages Json File(StringLocalization.json)
 ```json
 # Configuration
 {
