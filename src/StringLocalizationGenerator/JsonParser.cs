@@ -10,13 +10,13 @@ namespace StringLocalizationGenerator;
 
 public static class JsonParser
 {
-    public static IJsonData Parse(Microsoft.CodeAnalysis.Text.SourceText sourceText, CancellationToken cancellationToken)
+    public static IEnumerable<(JsonString, IJsonData)> Parse(Microsoft.CodeAnalysis.Text.SourceText sourceText, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var tokens = ParseTokens(sourceText, cancellationToken);
         var queue = tokens.GetEnumerator();
         queue.MoveNext();
-        return Convert(queue, cancellationToken);
+        return ConvertJsonObject(queue, cancellationToken);
     }
 
     private static IEnumerable<JsonToken> ParseTokens(Microsoft.CodeAnalysis.Text.SourceText sourceText, CancellationToken cancellationToken)
@@ -102,7 +102,57 @@ public static class JsonParser
 
     }
 
-    private static IJsonData Convert(IEnumerator<JsonToken> queue, CancellationToken cancellationToken)
+    private static IEnumerable<(JsonString, IJsonData)> ConvertJsonObject(IEnumerator<JsonToken> queue, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var currentToken = queue.Current;
+        queue.MoveNext();
+        if (currentToken.TokenType == JsonTokenType.ObjectStart)
+        {
+            // Object
+            while (true)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var peek = queue.Current;
+                if (peek.TokenType == JsonTokenType.Comma)
+                {
+                    queue.MoveNext();
+                    continue;
+                }
+                if (peek.TokenType == JsonTokenType.ObjectEnd)
+                {
+                    queue.MoveNext();
+                    break;
+                }
+                if (peek.TokenType != JsonTokenType.DoubleQuotation)
+                {
+                    throw new InvalidOperationException($"ObjectKey not found. Index({currentToken.Index})");
+                }
+
+                // 「ObjectKey : ObjectValue」
+                var key = ConvertJsonData(queue, cancellationToken);
+                if (key is not JsonString jsonStr)
+                {
+                    throw new InvalidOperationException($"ObjectKey is not string. Index({currentToken.Index})");
+                }
+                var coron = queue.Current;
+                queue.MoveNext();
+                if (coron.TokenType != JsonTokenType.Coron)
+                {
+                    throw new InvalidOperationException($"ObjectCoron not found. Index({currentToken.Index})");
+                }
+                var value = ConvertJsonData(queue, cancellationToken);
+                yield return (jsonStr, value);
+            }
+        }
+        else
+        {
+            throw new InvalidOperationException($"Invalid Token. Index({currentToken.Index})");
+        }
+    }
+
+
+    private static IJsonData ConvertJsonData(IEnumerator<JsonToken> queue, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var currentToken = queue.Current;
@@ -148,7 +198,7 @@ public static class JsonParser
                 }
 
                 // 「ObjectKey : ObjectValue」
-                var key = Convert(queue, cancellationToken);
+                var key = ConvertJsonData(queue, cancellationToken);
                 if (key is not JsonString jsonStr)
                 {
                     throw new InvalidOperationException($"ObjectKey is not string. Index({currentToken.Index})");
@@ -159,7 +209,7 @@ public static class JsonParser
                 {
                     throw new InvalidOperationException($"ObjectCoron not found. Index({currentToken.Index})");
                 }
-                var value = Convert(queue, cancellationToken);
+                var value = ConvertJsonData(queue, cancellationToken);
                 objectList.Add((jsonStr, value));
             }
             return new JsonObject()
@@ -186,7 +236,7 @@ public static class JsonParser
                     break;
                 }
 
-                var value = Convert(queue, cancellationToken);
+                var value = ConvertJsonData(queue, cancellationToken);
                 objectList.Add(value);
             }
             return new JsonArray()

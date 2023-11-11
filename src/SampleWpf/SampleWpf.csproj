@@ -6,6 +6,7 @@
 		<Nullable>enable</Nullable>
 		<LangVersion>11</LangVersion>
 		<UseWPF>true</UseWPF>
+		<DefineConstants>$(DefineConstans);WITH_STRING_LOCALIZATION_WPF_MARKUP</DefineConstants>
 	</PropertyGroup>
 
 	<ItemGroup>
