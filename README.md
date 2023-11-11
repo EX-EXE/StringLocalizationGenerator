@@ -93,7 +93,7 @@ StringLocalizationManager.ChangeLanguage(languageName);
 
 # Previous Versions
 <details>
-<summary>Previous Versions</summary>
+<summary>Version 1</summary>
   
 # How To Use
 ## Install by nuget
