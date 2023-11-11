@@ -53,6 +53,87 @@ PM> Install-Package [StringLocalizationGenerator](https://www.nuget.org/packages
 </ItemGroup>
 ```
 
+## (WPF Only) Add DefineConstants to .csproj
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<DefineConstants>$(DefineConstans);WITH_STRING_LOCALIZATION_WPF_MARKUP</DefineConstants>
+	</PropertyGroup>
+</Project>
+```
+
+## (Avalonia Only) Add DefineConstants to .csproj And <br/>Create StringLocalizationGenerator.BindingExtension.cs File
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<DefineConstants>$(DefineConstans);WITH_STRING_LOCALIZATION_AVALONIA_MARKUP</DefineConstants>
+	</PropertyGroup>
+</Project>
+```
+```csharp
+namespace StringLocalizationGenerator;
+public partial class BindingExtension
+{
+}
+```
+
+## Use xaml Or axaml
+```xaml
+<UserControl xmlns:loc="clr-namespace:StringLocalizationGenerator">
+  <TextBlock Text="{loc:Binding Key=[STRING_ID]}"></TextBlock>
+  <TextBlock Text="{loc:Binding KeyBinding={Binding KeyType}}"></TextBlock>
+</UserControl>
+```
+
+## Change Language
+```csharp
+StringLocalizationManager.ChangeLanguage(languageName);
+// ex. StringLocalizationManager.ChangeLanguage("en");
+```
+
+# Previous Versions
+<details>
+<summary>Previous Versions</summary>
+  
+# How To Use
+## Install by nuget
+PM> Install-Package [StringLocalizationGenerator](https://www.nuget.org/packages/StringLocalizationGenerator)
+
+## Create Languages Json File(StringLocalization.json)
+```json
+# Configuration
+{
+  "[STRING_ID]": {
+    "[LANGUAGE1]": "[TEXT1]",
+    "[LANGUAGE2]": "[TEXT2]",
+    "[LANGUAGE3]": "[TEXT3]",
+    "[LANGUAGE...]": "[TEXT...]",
+    "[default(Options)]": "[Text(if Language does not exist)]"
+  },
+  "[STRING_ID2]": {
+    "[LANGUAGE1]": "[TEXT1]",
+    "[LANGUAGE...]": "[TEXT...]"
+  }
+}
+```
+```json
+# Sample
+{
+  "ID_YES": {
+    "EN": "yes",
+    "JP": "はい"
+  },
+  "ID_NO": {
+    "EN": "no",
+    "JP": "いいえ"
+  },
+  "ID_TEST": {
+    "JP": "テスト",
+    "default": "test"
+  }
+}
+```
+  
 ## (WPF Only) Add OutputWpfMarkupExtension to .csproj
 ```xml
 <ItemGroup>
@@ -92,4 +173,7 @@ public partial class BindingExtension
 StringLocalizationManager.ChangeLanguage(languageName);
 // ex. StringLocalizationManager.ChangeLanguage("en");
 ```
+</details>
+
+
 
