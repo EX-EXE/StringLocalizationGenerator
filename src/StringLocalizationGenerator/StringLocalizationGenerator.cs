@@ -42,7 +42,7 @@ public partial class StringLocalizationGenerator : IIncrementalGenerator
     {
         if (action.Item2 != null)
         {
-            var sourceGenerator = new JsonSourceGenerater(action.Item1, action.Item2);
+            var sourceGenerator = new JsonSourceGenerator(action.Item1, action.Item2);
             var sourceContext = new ThreadSafeSourceContext(context);
             sourceGenerator.Generate(sourceContext);
         }
