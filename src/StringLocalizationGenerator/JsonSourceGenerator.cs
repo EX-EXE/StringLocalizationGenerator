@@ -133,7 +133,6 @@ public enum {{outputEnumLanguageName}} : int
 {{string.Join("\n", languageDict.Select(x => $"\t{x.Key} = {x.Value},"))}}
 }
 
-
 public class {{outputPropertyName}} : INotifyPropertyChanged, IDisposable
 {
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -178,8 +177,13 @@ public class {{outputPropertyName}} : INotifyPropertyChanged, IDisposable
 
 public class {{outputClassName}} : INotifyPropertyChanged
 {
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    private static readonly Lazy<{{{outputClassName}}}> instance = new Lazy<{{{outputClassName}}}>(() => new {{{outputClassName}}}());
+    public static {{{outputClassName}}} Shared => instance.Value;
+
     private static {{outputEnumLanguageName}} currentLanguage = {{outputEnumLanguageName}}.DEFAULT;
-    public static {{outputEnumLanguageName}} CurrentLanguage => currentLanguage;
+    public {{outputEnumLanguageName}} CurrentLanguage => currentLanguage;
 
     private static ReadOnlySpan<byte> binary => [
 {{string.Join("\n", binaryList.Select(x => $"\t\t{x}"))}}
@@ -222,6 +226,7 @@ public class {{outputClassName}} : INotifyPropertyChanged
         if(currentLanguage != languageType)
         {
             currentLanguage = languageType;
+            Shared.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentLanguage)));
             NotifyProperties();
         }
     }
