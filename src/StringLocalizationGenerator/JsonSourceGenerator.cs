@@ -8,7 +8,7 @@ using System.Threading;
 
 namespace StringLocalizationGenerator;
 
-internal class JsonSourceGenerater
+internal class JsonSourceGenerator
 {
     private static readonly long intMax = Convert.ToInt64(int.MaxValue);
 
@@ -16,7 +16,7 @@ internal class JsonSourceGenerater
     private readonly SourceText sourceText;
     private int id = 0;
 
-    public JsonSourceGenerater(AdditionalText additionalText, SourceText sourceText)
+    public JsonSourceGenerator(AdditionalText additionalText, SourceText sourceText)
     {
         this.additionalText = additionalText;
         this.sourceText = sourceText;
