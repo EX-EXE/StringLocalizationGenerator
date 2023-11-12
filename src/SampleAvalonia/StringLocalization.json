@@ -1,7 +1,7 @@
 {
   "ID_TEST": {
-    "default": "test",
-    "jp": "テスト"
+    "jp": "テスト",
+    "EN": "test"
   },
   "ID_YES": {
     "en": "yes",

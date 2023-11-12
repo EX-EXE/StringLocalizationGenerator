@@ -1,20 +1,24 @@
 ﻿
 using CommunityToolkit.Mvvm.ComponentModel;
+using HarfBuzzSharp;
 using StringLocalizationGenerator;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows.Input;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace SampleAvalonia;
 
 public partial class MainViewModel : ObservableObject
 {
-    private Dictionary<string, string> LangDict = new Dictionary<string, string>()
+    static ReadOnlySpan<byte> Aa => [0x11, 0x30,];
+
+    private Dictionary<string, StringLocalizationLanguageType> LangDict = new()
     {
-        { "English","en"},
-        { "日本語","jp"},
-        { "Default","default"},
+        { "日本語",StringLocalizationLanguageType.JP},
+        { "English", StringLocalizationLanguageType.EN},
+        { "Default",StringLocalizationLanguageType.DEFAULT},
     };
 
     public ObservableCollection<string> Languages { get; set; } = new ObservableCollection<string>();

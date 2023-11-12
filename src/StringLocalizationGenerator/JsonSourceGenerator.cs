@@ -8,18 +8,48 @@ using System.Threading;
 
 namespace StringLocalizationGenerator;
 
-internal class JsonSourceGenerater
+internal class JsonSourceGenerator
 {
     private static readonly long intMax = Convert.ToInt64(int.MaxValue);
 
     private readonly AdditionalText additionalText;
     private readonly SourceText sourceText;
-    private int id = 0;
+    private int keyId = 0;
 
-    public JsonSourceGenerater(AdditionalText additionalText, SourceText sourceText)
+
+    private readonly object languageLock = new object();
+    private int languageId = 0;
+    private readonly Dictionary<string, int> languageDict = new();
+
+
+    private int GetOrAddLanguageId(ReadOnlySpan<char> language)
+    {
+        var key = language.Trim().ToString().ToUpperInvariant();
+
+        if (languageDict.TryGetValue(key, out var value))
+        {
+            return value;
+        }
+
+        lock (languageLock)
+        {
+            if (languageDict.TryGetValue(key, out var lockValue))
+            {
+                return lockValue;
+            }
+
+            var result = languageId;
+            languageDict.Add(key, result);
+            ++languageId;
+            return result;
+        }
+    }
+
+    public JsonSourceGenerator(AdditionalText additionalText, SourceText sourceText)
     {
         this.additionalText = additionalText;
         this.sourceText = sourceText;
+        GetOrAddLanguageId("Default".AsSpan());
     }
 
     public void Generate(ThreadSafeSourceContext sourceContext)
@@ -38,11 +68,15 @@ internal class JsonSourceGenerater
         //var fileNameWithout = fileName.Substring(0, fileName.Length - jsonName.Length);
         var outputClassName = $"{fileName}Manager";
         var outputEnumKeyName = $"{fileName}KeyType";
+        var outputEnumLanguageName = $"{fileName}LanguageType";
+        var outputPropertyName = $"{fileName}Property";
 
-        var keyDict = new ConcurrentDictionary<string, int>();
-        var languageDict = new ConcurrentDictionary<string, long>();
+        var keyDict = new Dictionary<string, int>();
 
-        Parallel.ForEach(JsonParser.Parse(sourceText, cancellationToken), json =>
+        var languageList = new List<(ulong id, ulong index, int length)>();
+        var binaryList = new List<string>();
+        var binaryIndex = 0UL;
+        foreach (var json in JsonParser.Parse(sourceText, cancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
             var jsonStr = json.Item1;
@@ -50,63 +84,37 @@ internal class JsonSourceGenerater
 
             if (jsonData is JsonObject jsonObject)
             {
-                var defaultData = (string?)null;
-                var languageList = new List<(long, string, string)>();
+                // Key
+                var textKeyStr = jsonStr.ToString(sourceText);
+                var textKeyId = keyId;
+                Interlocked.Increment(ref keyId);
+                keyDict.Add(textKeyStr, textKeyId);
+
+                // Language
                 foreach (var (languageKey, languageObj) in jsonObject.Objects)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     if (languageObj is JsonString languageString)
                     {
-                        var languageName = languageKey.ToString(sourceText).Trim().ToLowerInvariant();
+                        var languageName = languageKey.ToString(sourceText);
                         var languageData = languageString.ToString(sourceText);
-                        if (languageName.Equals("default", StringComparison.OrdinalIgnoreCase))
-                        {
-                            defaultData = languageData;
-                        }
-                        else
-                        {
-                            var languageHash = Convert.ToInt64(languageName.GetHashCode()) + intMax + 1;
-                            languageDict.TryAdd(languageName, languageHash);
-                            languageList.Add((languageHash, languageData, languageName));
-                        }
+
+                        var languageId = GetOrAddLanguageId(languageName.AsSpan());
+                        var languageBytes = System.Text.Encoding.UTF8.GetBytes(languageData);
+
+                        var id = (Convert.ToUInt64(textKeyId) << 32) + Convert.ToUInt64(languageId);
+                        languageList.Add((id, binaryIndex, languageBytes.Length));
+
+                        binaryList.Add($"{string.Concat(languageBytes.Select(x => $"0x{x.ToString("X2")}, "))} // Index({binaryIndex}) Length({languageBytes.Length}) Id({id}) {textKeyStr}({languageData})[{languageName}] ");
+                        binaryIndex += Convert.ToUInt64(languageBytes.Length);
                     }
                 }
 
-                var jsonKey = jsonStr.ToString(sourceText);
-                var keyHash = id;
-                Interlocked.Increment(ref id);
-                keyDict.TryAdd(jsonKey, keyHash);
-
-                sourceContext.AddSource($"{outputClassName}.{jsonKey}.g.cs".AsSpan(), $$"""
-using System;
-using System.Buffers;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-
-namespace StringLocalizationGenerator;
-
-partial class {{outputClassName}}
-{
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static string STRING_{{jsonKey}}(long languageIndex)
-        => languageIndex switch
-        {
-{{string.Join("\n", languageList.Select(x => $"\t\t\t{x.Item1} => \"{x.Item2}\", // {x.Item3}"))}}
-            _ => {{(defaultData != null ? $"\"{defaultData}\"" : $"throw new System.InvalidOperationException($\"NotFound Localization. Key({jsonKey}) Language({{LanguageNames[languageIndex]}})\"),")}}
-        };
-
-    public static string STRING_{{jsonKey}}()
-        => STRING_{{jsonKey}}(currentLanguageIndex);
-
-    public string {{jsonKey}}
-        => STRING_{{jsonKey}}(currentLanguageIndex);
-}
-""".AsSpan());
             }
-        });
+        }
 
-        // Create Source
-        sourceContext.AddSource($"{outputClassName}.g.cs".AsSpan(), $$$"""
+
+        sourceContext.AddSource($"{outputClassName}.g.cs".AsSpan(), $$"""
 using System;
 using System.Buffers;
 using System.ComponentModel;
@@ -114,86 +122,132 @@ using System.Runtime.CompilerServices;
 
 namespace StringLocalizationGenerator;
 
-public enum {{{outputEnumKeyName}}} : int
+
+public enum {{outputEnumKeyName}} : int
 {
-{{{string.Join("\n", keyDict.Select(x => $"\t{x.Key} = {x.Value},"))}}}
+{{string.Join("\n", keyDict.Select(x => $"\t{x.Key} = {x.Value},"))}}
 }
 
-public partial class {{{outputClassName}}} : INotifyPropertyChanged 
+public enum {{outputEnumLanguageName}} : int
 {
-    private static readonly Lazy<{{{outputClassName}}}> instance = new Lazy<{{{outputClassName}}}>(() => new {{{outputClassName}}}());
-    public static {{{outputClassName}}} Shared => instance.Value;
+{{string.Join("\n", languageDict.Select(x => $"\t{x.Key} = {x.Value},"))}}
+}
 
 
-    public static string[] KeyNames = {{{{string.Join(", ", keyDict.Select(x => $"\"{x.Key}\""))}}}};
-    public static {{{outputEnumKeyName}}} GetKeyType(ReadOnlySpan<char> key)
-    {
-        return key switch
-            {
-{{{string.Join("\n", keyDict.Select(x => $"\t\t\t\t\"{x.Key}\" => {outputEnumKeyName}.{x.Key},"))}}}
-                _ => throw new System.NotImplementedException($"NotImplemented Key. ({key})")
-            };
-    }
-
-    public static string[] LanguageNames = {{{{string.Join(", ", languageDict.Select(x => $"\"{x.Key}\""))}}}};
-    private static long currentLanguageIndex = -1;
-    public long CurrentLanguageIndex => currentLanguageIndex;
-
+public class {{outputPropertyName}} : INotifyPropertyChanged, IDisposable
+{
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static long GetLanguageIndex(ReadOnlySpan<char> lang)
+    private {{outputEnumKeyName}} key;
+    public {{outputEnumKeyName}} Key
     {
-        var buffer = ArrayPool<char>.Shared.Rent(lang.Length);
-        try
+        get
         {
-            var bufferSpan = buffer.AsSpan();
-            var len = lang.ToLowerInvariant(bufferSpan);
-            bufferSpan = bufferSpan.Slice(0, len);
-
-            var index = bufferSpan switch
+            return key;
+        }
+        set
+        {
+            if (key != value)
             {
-{{{string.Join("\n", languageDict.Select(x => $"\t\t\t\t\"{x.Key}\" => {x.Value}L,"))}}}
-                _ => -1,
-            };
-            return index;
+                this.key = value;
+                NotifyPropertyChanged();
+            }
         }
-        finally
+    }
+
+    public string Value
+        => {{outputClassName}}.GetString(Key);
+
+    internal {{outputPropertyName}}({{outputEnumKeyName}} keyType)
+    {
+        Key = keyType;
+    }
+
+    public void Dispose()
+    {
+        {{outputClassName}}.RemoveProperty(this);
+    }
+
+    public void NotifyPropertyChanged()
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Value"));
+    }
+
+}
+
+
+public class {{outputClassName}} : INotifyPropertyChanged
+{
+    private static {{outputEnumLanguageName}} currentLanguage = {{outputEnumLanguageName}}.DEFAULT;
+    public static {{outputEnumLanguageName}} CurrentLanguage => currentLanguage;
+
+    private static ReadOnlySpan<byte> binary => [
+{{string.Join("\n", binaryList.Select(x => $"\t\t{x}"))}}
+    ];
+
+    private static object propertyListLock = new object();
+    private static List<{{outputPropertyName}}> propertyList = new();
+    public static {{outputPropertyName}} CreateProperty({{outputEnumKeyName}} keyType)
+    {
+        var instance = new {{outputPropertyName}}(keyType);
+        lock(propertyListLock)
         {
-            ArrayPool<char>.Shared.Return(buffer);
+            propertyList.Add(instance);
         }
+        return instance;
+    }
+    public static void RemoveProperty({{outputPropertyName}} instance)
+    {
+        lock(propertyListLock)
+        {
+            if(propertyList.Contains(instance))
+            {
+                propertyList.Remove(instance);
+            }
+        }
+    }
+    public static void NotifyProperties()
+    {
+        lock(propertyListLock)
+        {
+            foreach(var property in propertyList)
+            {
+                property.NotifyPropertyChanged();
+            }
+        }
+    }
+
+    public static void ChangeLanguage({{outputEnumLanguageName}} languageType)
+    {
+        if(currentLanguage != languageType)
+        {
+            currentLanguage = languageType;
+            NotifyProperties();
+        }
+    }
+
+    public static string GetString({{outputEnumKeyName}} keyType)
+    {
+        return System.Text.Encoding.UTF8.GetString(GetBytes(keyType, currentLanguage));
+    }
+
+    private static ReadOnlySpan<byte> GetBytes({{outputEnumKeyName}} keyType, {{outputEnumLanguageName}} languageType)
+    {
+        (int index,int length) = GetIndexAndLength(keyType, languageType);
+        return binary.Slice(index, length);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void ChangeLanguage(long languageIndex)
+    private static (int index,int length) GetIndexAndLength({{outputEnumKeyName}} keyType, {{outputEnumLanguageName}} languageType)
     {
-        if(currentLanguageIndex != languageIndex)
+        var id = (Convert.ToUInt64(keyType) << 32) + Convert.ToUInt64(languageType);
+        return id switch
         {
-            currentLanguageIndex = languageIndex;
-            Shared.PropertyChanged?.Invoke(Shared, new PropertyChangedEventArgs("CurrentLanguageIndex"));
-{{{string.Join("\n", keyDict.Select(x => "\t\t\t" + $"""Shared.PropertyChanged?.Invoke(Shared, new PropertyChangedEventArgs("{x.Key}"));"""))}}}
-        }
-    }
-
-    public static void ChangeDefaultLanguage()
-    {
-        ChangeLanguage(-1);
-    }
-
-    public static void ChangeLanguage(ReadOnlySpan<char> lang)
-    {
-        var index = GetLanguageIndex(lang);
-        ChangeLanguage(index);
-    }
-
-    public static string GetString({{{outputEnumKeyName}}} type)
-    {
-        return type switch
-        {
-{{{string.Join("\n", keyDict.Select(x => $"\t\t\t{outputEnumKeyName}.{x.Key} => STRING_{x.Key}(),"))}}}
-            _ => throw new System.NotImplementedException($"NotImplemented Type. ({type})")
+{{string.Join("\n", languageList.Select(x => $"\t\t\t{x.id}UL => ({x.index}, {x.length}),"))}}
+            _ => throw new System.InvalidOperationException($"NotFound Localization.")
         };
     }
+
 }
 """.AsSpan());
     }
