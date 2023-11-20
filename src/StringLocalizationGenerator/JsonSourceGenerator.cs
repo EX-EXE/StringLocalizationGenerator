@@ -139,7 +139,7 @@ public partial class {{{outputClassName}}} : INotifyPropertyChanged
     private static long currentLanguageIndex = -1;
     public long CurrentLanguageIndex => currentLanguageIndex;
 
-    public event PropertyChangedEventHandler? PropertyChanged;
+    public event PropertyChangedEventHandler PropertyChanged;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static long GetLanguageIndex(ReadOnlySpan<char> lang)
@@ -220,7 +220,7 @@ public partial class {{fileName}}MultiValueConverter : IMultiValueConverter
     {
     }
 
-    public object? Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
     {
         foreach (var value in values.Skip(1).Reverse())
         {
@@ -250,7 +250,7 @@ public partial class {{fileName}}MultiValueConverter : IMultiValueConverter
 public partial class BindingExtension : MarkupExtension
 {
     public {{fileName}}KeyType? Key { get; set; } = null;
-    public Binding? KeyBinding { get; set; } = null;
+    public Binding KeyBinding { get; set; } = null;
 
 
     public override object ProvideValue(System.IServiceProvider serviceProvider)
@@ -304,7 +304,7 @@ public partial class {{{fileName}}}MultiValueConverter : IMultiValueConverter
     {
     }
 
-    public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
+    public object Convert(IList<object> values, Type targetType, object parameter, CultureInfo culture)
     {
         foreach (var value in values.Skip(1).Reverse())
         {
@@ -329,7 +329,7 @@ public partial class {{{fileName}}}MultiValueConverter : IMultiValueConverter
 public partial class BindingExtension : MarkupExtension
 {
     public {{{fileName}}}KeyType? Key { get; set; } = null;
-    public CompiledBindingExtension? KeyBinding { get; set; } = null;
+    public CompiledBindingExtension KeyBinding { get; set; } = null;
 
     public override object ProvideValue(System.IServiceProvider serviceProvider)
     {
