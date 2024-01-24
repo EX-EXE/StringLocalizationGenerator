@@ -42,7 +42,7 @@ internal class JsonSourceGenerator
         var keyDict = new ConcurrentDictionary<string, int>();
         var languageDict = new ConcurrentDictionary<string, long>();
 
-        Parallel.ForEach(JsonParser.Parse(sourceText, cancellationToken), json =>
+        foreach (var json in JsonParser.Parse(sourceText, cancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
             var jsonStr = json.Item1;
@@ -83,6 +83,13 @@ using System.Buffers;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
+#nullable enable
+#pragma warning disable CS8600
+#pragma warning disable CS8601
+#pragma warning disable CS8602
+#pragma warning disable CS8603
+#pragma warning disable CS8604
+
 namespace StringLocalizationGenerator;
 
 partial class {{outputClassName}}
@@ -103,7 +110,7 @@ partial class {{outputClassName}}
 }
 """.AsSpan());
             }
-        });
+        }
 
         // Create Source
         sourceContext.AddSource($"{outputClassName}.g.cs".AsSpan(), $$$"""
@@ -111,6 +118,13 @@ using System;
 using System.Buffers;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+
+#nullable enable
+#pragma warning disable CS8600
+#pragma warning disable CS8601
+#pragma warning disable CS8602
+#pragma warning disable CS8603
+#pragma warning disable CS8604
 
 namespace StringLocalizationGenerator;
 
@@ -139,7 +153,7 @@ public partial class {{{outputClassName}}} : INotifyPropertyChanged
     private static long currentLanguageIndex = -1;
     public long CurrentLanguageIndex => currentLanguageIndex;
 
-    public event PropertyChangedEventHandler PropertyChanged;
+    public event PropertyChangedEventHandler? PropertyChanged;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static long GetLanguageIndex(ReadOnlySpan<char> lang)
@@ -212,6 +226,13 @@ using System.Windows;
 using System.Windows.Data;
 using System.Windows.Markup;
 
+#nullable enable
+#pragma warning disable CS8600
+#pragma warning disable CS8601
+#pragma warning disable CS8602
+#pragma warning disable CS8603
+#pragma warning disable CS8604
+
 namespace StringLocalizationGenerator;
 
 public partial class {{fileName}}MultiValueConverter : IMultiValueConverter
@@ -220,7 +241,7 @@ public partial class {{fileName}}MultiValueConverter : IMultiValueConverter
     {
     }
 
-    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+    public object? Convert(object?[] values, Type targetType, object? parameter, CultureInfo culture)
     {
         foreach (var value in values.Skip(1).Reverse())
         {
@@ -241,7 +262,7 @@ public partial class {{fileName}}MultiValueConverter : IMultiValueConverter
         return null;
     }
 
-    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+    public object?[] ConvertBack(object? value, Type[] targetTypes, object? parameter, CultureInfo culture)
     {
         throw new NotImplementedException();
     }
@@ -250,7 +271,7 @@ public partial class {{fileName}}MultiValueConverter : IMultiValueConverter
 public partial class BindingExtension : MarkupExtension
 {
     public {{fileName}}KeyType? Key { get; set; } = null;
-    public Binding KeyBinding { get; set; } = null;
+    public Binding? KeyBinding { get; set; } = null;
 
 
     public override object ProvideValue(System.IServiceProvider serviceProvider)
@@ -296,6 +317,13 @@ using Avalonia.Data.Converters;
 using Avalonia.Markup.Xaml;
 using Avalonia.Markup.Xaml.MarkupExtensions;
 
+#nullable enable
+#pragma warning disable CS8600
+#pragma warning disable CS8601
+#pragma warning disable CS8602
+#pragma warning disable CS8603
+#pragma warning disable CS8604
+
 namespace StringLocalizationGenerator;
 
 public partial class {{{fileName}}}MultiValueConverter : IMultiValueConverter
@@ -304,7 +332,7 @@ public partial class {{{fileName}}}MultiValueConverter : IMultiValueConverter
     {
     }
 
-    public object Convert(IList<object> values, Type targetType, object parameter, CultureInfo culture)
+    public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
     {
         foreach (var value in values.Skip(1).Reverse())
         {
@@ -329,7 +357,7 @@ public partial class {{{fileName}}}MultiValueConverter : IMultiValueConverter
 public partial class BindingExtension : MarkupExtension
 {
     public {{{fileName}}}KeyType? Key { get; set; } = null;
-    public CompiledBindingExtension KeyBinding { get; set; } = null;
+    public CompiledBindingExtension? KeyBinding { get; set; } = null;
 
     public override object ProvideValue(System.IServiceProvider serviceProvider)
     {
