@@ -36,12 +36,11 @@ public partial class MainViewModel : ObservableObject
         StringLocalizationManager.ChangeLanguage(first.Value);
     }
 
-    partial void OnSelectedLanguageChanged(string lang)
-    {
-        if (LangDict.TryGetValue(lang, out var key))
-        {
-            StringLocalizationManager.ChangeLanguage(key);
-        }
-    }
-
+	partial void OnSelectedLanguageChanged(string? oldValue, string newValue)
+	{
+		if (LangDict.TryGetValue(newValue, out var key))
+		{
+			StringLocalizationManager.ChangeLanguage(key);
+		}
+	}
 }
